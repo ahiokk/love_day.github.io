@@ -1,0 +1,959 @@
+﻿<!doctype html>
+<html lang="ru">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>LOVE DAY - Валентинка для Маши</title>
+    <style>
+      :root {
+        --bg-1: #fff1f2;
+        --bg-2: #ffe7d6;
+        --bg-3: #ffe0ea;
+        --card: rgba(255, 255, 255, 0.92);
+        --ink: #2b1a1f;
+        --muted: #7b4e59;
+        --accent: #ff5c7a;
+        --accent-2: #ff9b6b;
+        --accent-3: #ffcf6b;
+        --shadow: 0 24px 55px rgba(120, 52, 64, 0.22);
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        min-height: 100vh;
+        background: radial-gradient(circle at 20% 20%, var(--bg-1), transparent 45%),
+          radial-gradient(circle at 80% 10%, var(--bg-3), transparent 45%),
+          linear-gradient(140deg, var(--bg-2), var(--bg-1));
+        color: var(--ink);
+        font-family: "Palatino Linotype", "Book Antiqua", Palatino, serif;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 32px 16px 48px;
+        overflow-x: hidden;
+      }
+
+      body::before {
+        content: "";
+        position: fixed;
+        inset: 0;
+        background-image: radial-gradient(rgba(255, 255, 255, 0.35) 1px, transparent 1px);
+        background-size: 22px 22px;
+        opacity: 0.35;
+        pointer-events: none;
+      }
+
+      .app {
+        width: min(92vw, 560px);
+        position: relative;
+        z-index: 1;
+      }
+
+      .progress-row {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        margin-bottom: 16px;
+      }
+
+      .progress-text {
+        font-family: "Trebuchet MS", "Lucida Sans Unicode", "Lucida Grande", sans-serif;
+        font-weight: 700;
+        letter-spacing: 0.5px;
+        font-size: 0.95rem;
+        white-space: nowrap;
+      }
+
+      .progress-bar {
+        flex: 1;
+        height: 8px;
+        background: rgba(255, 255, 255, 0.7);
+        border-radius: 999px;
+        overflow: hidden;
+        box-shadow: inset 0 0 0 1px rgba(255, 92, 122, 0.15);
+      }
+
+      .progress-fill {
+        height: 100%;
+        width: 0;
+        background: linear-gradient(90deg, var(--accent), var(--accent-2));
+        border-radius: inherit;
+        transition: width 0.35s ease;
+      }
+
+      .card {
+        background: var(--card);
+        border-radius: 26px;
+        padding: 28px 26px;
+        min-height: 420px;
+        box-shadow: var(--shadow);
+        position: relative;
+        overflow: hidden;
+      }
+
+      .card.animate-in {
+        animation: cardIn 0.45s ease;
+      }
+
+      @keyframes cardIn {
+        from {
+          opacity: 0;
+          transform: translateY(14px) scale(0.98);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0) scale(1);
+        }
+      }
+
+      h1,
+      h2,
+      h3 {
+        font-family: "Trebuchet MS", "Lucida Sans Unicode", "Lucida Grande", sans-serif;
+        margin: 0 0 12px;
+      }
+
+      p {
+        margin: 0 0 14px;
+        line-height: 1.55;
+      }
+
+      .muted {
+        color: var(--muted);
+      }
+
+      .hidden {
+        display: none;
+      }
+
+      .btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        padding: 13px 18px;
+        border-radius: 14px;
+        border: none;
+        font-size: 1rem;
+        font-weight: 700;
+        cursor: pointer;
+        font-family: "Trebuchet MS", "Lucida Sans Unicode", "Lucida Grande", sans-serif;
+        transition: transform 0.15s ease, box-shadow 0.2s ease, opacity 0.2s ease;
+        touch-action: manipulation;
+      }
+
+      .btn.primary {
+        background: linear-gradient(135deg, var(--accent), var(--accent-2));
+        color: #fff;
+        box-shadow: 0 12px 22px rgba(255, 92, 122, 0.35);
+      }
+
+      .btn.secondary {
+        background: #fff;
+        color: var(--ink);
+        border: 1px solid rgba(255, 92, 122, 0.3);
+      }
+
+      .btn:active {
+        transform: translateY(1px) scale(0.99);
+      }
+
+      .btn:disabled {
+        opacity: 0.45;
+        cursor: not-allowed;
+        box-shadow: none;
+      }
+
+      .btn.block {
+        width: 100%;
+      }
+
+      .btn-row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 12px;
+        margin-top: 10px;
+      }
+
+      button:focus-visible {
+        outline: 3px solid rgba(255, 92, 122, 0.45);
+        outline-offset: 2px;
+      }
+
+      .burst-layer {
+        position: absolute;
+        inset: 0;
+        pointer-events: none;
+      }
+
+      .burst-heart {
+        position: absolute;
+        left: 50%;
+        top: 50%;
+        font-size: 22px;
+        transform: translate(-50%, -50%);
+        animation: burst 1.5s ease-out forwards;
+        --dx: 0px;
+        --dy: 0px;
+        --rot: 0deg;
+      }
+
+      @keyframes burst {
+        0% {
+          transform: translate(-50%, -50%) scale(0.8) rotate(0deg);
+          opacity: 1;
+        }
+        100% {
+          transform: translate(calc(-50% + var(--dx)), calc(-50% + var(--dy)))
+            scale(1.4) rotate(var(--rot));
+          opacity: 0;
+        }
+      }
+
+      .test-meta {
+        font-size: 0.95rem;
+        font-weight: 700;
+        color: var(--muted);
+      }
+
+      .options {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+        gap: 10px;
+        margin-top: 12px;
+        margin-bottom: 12px;
+      }
+
+      .options .btn {
+        font-weight: 600;
+        font-size: 0.95rem;
+      }
+
+      .reaction {
+        background: rgba(255, 156, 130, 0.15);
+        border-radius: 14px;
+        padding: 12px 14px;
+        margin-top: 10px;
+      }
+
+      .arena {
+        height: 240px;
+        border-radius: 20px;
+        background: linear-gradient(145deg, rgba(255, 255, 255, 0.8), rgba(255, 222, 230, 0.6));
+        border: 1px dashed rgba(255, 92, 122, 0.25);
+        position: relative;
+        overflow: hidden;
+      }
+
+      .runner-heart {
+        position: absolute;
+        width: 56px;
+        height: 56px;
+        border-radius: 50%;
+        border: none;
+        background: #fff;
+        box-shadow: 0 10px 18px rgba(255, 92, 122, 0.2);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 28px;
+        cursor: pointer;
+        transition: transform 0.15s ease;
+      }
+
+      .runner-heart.caught {
+        opacity: 0.45;
+        cursor: default;
+      }
+
+      .reason-popup {
+        margin-top: 14px;
+        padding: 12px 14px;
+        border-radius: 16px;
+        background: rgba(255, 214, 186, 0.55);
+        opacity: 0;
+        transform: translateY(6px) scale(0.98);
+        transition: opacity 0.25s ease, transform 0.25s ease;
+        min-height: 64px;
+      }
+
+      .reason-popup.show {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+      }
+
+      .contract-list {
+        display: grid;
+        gap: 10px;
+        margin: 12px 0 8px;
+      }
+
+      .contract-item {
+        display: flex;
+        gap: 10px;
+        align-items: flex-start;
+        font-size: 0.95rem;
+        padding: 10px 12px;
+        border-radius: 14px;
+        background: rgba(255, 233, 226, 0.5);
+      }
+
+      .contract-item input {
+        margin-top: 2px;
+        accent-color: var(--accent);
+      }
+
+      .hint {
+        color: var(--accent);
+        font-weight: 600;
+        min-height: 22px;
+      }
+
+      .signature {
+        margin-top: 12px;
+        padding: 12px 14px;
+        border-radius: 14px;
+        background: rgba(255, 206, 120, 0.2);
+        font-weight: 700;
+      }
+
+      .secret-boxes {
+        display: grid;
+        gap: 10px;
+        margin-top: 12px;
+      }
+
+      .secret-box {
+        background: rgba(255, 214, 224, 0.45);
+        border-radius: 14px;
+        padding: 12px 14px;
+        font-weight: 600;
+      }
+
+      .small-note {
+        margin-top: 18px;
+        font-size: 0.85rem;
+        color: var(--muted);
+      }
+
+      .overlay {
+        position: fixed;
+        inset: 0;
+        background: rgba(26, 18, 22, 0.45);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity 0.3s ease;
+        z-index: 4;
+        padding: 24px;
+      }
+
+      .overlay.show {
+        opacity: 1;
+        pointer-events: auto;
+      }
+
+      .modal {
+        background: #fff;
+        border-radius: 20px;
+        padding: 26px 24px;
+        max-width: 420px;
+        width: 100%;
+        text-align: center;
+        box-shadow: 0 18px 40px rgba(45, 20, 28, 0.35);
+      }
+
+      .confetti {
+        position: fixed;
+        top: -20px;
+        animation: confettiFall var(--dur) ease-in forwards;
+        z-index: 5;
+        pointer-events: none;
+      }
+
+      @keyframes confettiFall {
+        0% {
+          transform: translateY(-20px) rotate(0deg);
+          opacity: 1;
+        }
+        100% {
+          transform: translateY(110vh) rotate(360deg);
+          opacity: 0;
+        }
+      }
+
+      @media (max-width: 520px) {
+        .card {
+          padding: 22px 18px;
+          min-height: 400px;
+        }
+
+        .options {
+          grid-template-columns: 1fr;
+        }
+
+        .btn-row {
+          flex-direction: column;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main class="app" aria-live="polite">
+      <div class="progress-row">
+        <div class="progress-text" id="progressText">Шаг 1 / 6</div>
+        <div class="progress-bar">
+          <div class="progress-fill" id="progressFill"></div>
+        </div>
+      </div>
+      <section class="card" id="card"></section>
+    </main>
+    <div class="overlay" id="overlay" aria-hidden="true"></div>
+
+    <script>
+      const state = {
+        step: 1,
+        testIndex: 0,
+        heartsCaught: 0,
+        contractChecks: [false, false, false, false, false],
+        contractSigned: false,
+        secretUnlocked: false,
+        cleanups: [],
+        audioCtx: null,
+      };
+
+      const totalSteps = 6;
+      const card = document.getElementById("card");
+      const progressText = document.getElementById("progressText");
+      const progressFill = document.getElementById("progressFill");
+      const overlay = document.getElementById("overlay");
+
+      const testQuestions = [
+        {
+          q: "Что в тебе самое классное?",
+          options: ["Улыбка", "Глаза", "Характер", "Всё сразу"],
+          reaction: "Правильно. Я проверял много раз.",
+        },
+        {
+          q: "Когда ты запускаешь «наебательный процесс», я…",
+          options: [
+            "Сдаюсь",
+            "Начинаю смеяться",
+            "Понимаю, что это любовь",
+            "Включаю режим: «Я всё вижу 😌»",
+          ],
+          reaction:
+            "Наебательный процесс зафиксирован. Уровень хитрости: очаровательно опасный.",
+        },
+        {
+          q: "Что я люблю в тебе «слишком сильно» (и это странно)?",
+          options: ["Смех", "Обнимашки", "Твою правую руку 🤝", "Всё перечисленное"],
+          reaction: "Да, я знаю. Это странно. Но правая рука — легенда.",
+        },
+      ];
+
+      const heartReasons = [
+        "Ты — мой уют. С тобой всё становится проще.",
+        "Ты смешная. Прямо опасно смешная.",
+        "Твой «наебательный процесс» — моё любимое шоу. Я всегда ‘против’, но внутри я фанат.",
+        "Ты умеешь быть милой даже тогда, когда делаешь вид, что серьёзная.",
+        "И да… твоя правая рука — отдельная любовь. Я стараюсь быть нормальным, но не обещаю.",
+      ];
+
+      function addCleanup(fn) {
+        state.cleanups.push(fn);
+      }
+
+      function runCleanups() {
+        while (state.cleanups.length) {
+          const fn = state.cleanups.pop();
+          try {
+            fn();
+          } catch (error) {
+            console.error(error);
+          }
+        }
+      }
+
+      function beep(freq = 640, duration = 0.08) {
+        try {
+          const AudioContext = window.AudioContext || window.webkitAudioContext;
+          if (!AudioContext) return;
+          if (!state.audioCtx) state.audioCtx = new AudioContext();
+          const ctx = state.audioCtx;
+          const osc = ctx.createOscillator();
+          const gain = ctx.createGain();
+          gain.gain.value = 0.05;
+          osc.frequency.value = freq;
+          osc.type = "triangle";
+          osc.connect(gain);
+          gain.connect(ctx.destination);
+          osc.start();
+          osc.stop(ctx.currentTime + duration);
+        } catch (error) {
+          console.warn(error);
+        }
+      }
+
+      function updateProgress() {
+        progressText.textContent = `Шаг ${state.step} / ${totalSteps}`;
+        progressFill.style.width = `${(state.step / totalSteps) * 100}%`;
+      }
+
+      function animateCard() {
+        card.classList.remove("animate-in");
+        void card.offsetWidth;
+        card.classList.add("animate-in");
+      }
+
+      function focusPrimary() {
+        const btn = card.querySelector(".btn.primary:not([disabled])") || card.querySelector("button");
+        if (btn) setTimeout(() => btn.focus(), 60);
+      }
+
+      function burstHearts(container, amount = 18) {
+        for (let i = 0; i < amount; i++) {
+          const heart = document.createElement("span");
+          heart.className = "burst-heart";
+          heart.textContent = "❤️";
+          const angle = Math.random() * Math.PI * 2;
+          const distance = 40 + Math.random() * 120;
+          heart.style.setProperty("--dx", `${Math.cos(angle) * distance}px`);
+          heart.style.setProperty("--dy", `${Math.sin(angle) * distance}px`);
+          heart.style.setProperty("--rot", `${Math.random() * 140 - 70}deg`);
+          container.appendChild(heart);
+          setTimeout(() => heart.remove(), 1600);
+        }
+      }
+
+      const steps = {
+        1: {
+          template: () => `
+            <h1>Маша, обнаружена критическая милота 💥</h1>
+            <p id="loadingLine">Идёт загрузка чувств… 12% → 13% → 13% …</p>
+            <p id="errorLine" class="muted hidden">Ошибка: уровень «бусинка» превышает допустимый. Загрузка взорвалась из-за милоты ❤️</p>
+            <div class="burst-layer" id="burstLayer" aria-hidden="true"></div>
+            <div class="btn-row">
+              <button class="btn primary" id="restartBtn" type="button" disabled>Перезапустить сердечко ❤️</button>
+            </div>
+          `,
+          init: () => {
+            const errorLine = document.getElementById("errorLine");
+            const restartBtn = document.getElementById("restartBtn");
+            const burstLayer = document.getElementById("burstLayer");
+            const timer = setTimeout(() => {
+              errorLine.classList.remove("hidden");
+              burstHearts(burstLayer);
+              restartBtn.disabled = false;
+              beep(520);
+              focusPrimary();
+            }, 1100);
+            addCleanup(() => clearTimeout(timer));
+            restartBtn.addEventListener("click", () => {
+              beep(680);
+              nextStep();
+            });
+          },
+        },
+        2: {
+          template: () => `
+            <h2>Мини-тест для Маши</h2>
+            <p class="muted">Никаких неправильных ответов — только милота.</p>
+            <div class="test-meta" id="testMeta"></div>
+            <h3 id="testQuestion"></h3>
+            <div class="options" id="testOptions"></div>
+            <div class="reaction hidden" id="testReaction"></div>
+            <div class="btn-row">
+              <button class="btn primary hidden" id="testNext" type="button">Следующий вопрос</button>
+              <button class="btn primary hidden" id="testDone" type="button">Дальше</button>
+            </div>
+          `,
+          init: () => {
+            state.testIndex = 0;
+            const testMeta = document.getElementById("testMeta");
+            const testQuestion = document.getElementById("testQuestion");
+            const testOptions = document.getElementById("testOptions");
+            const testReaction = document.getElementById("testReaction");
+            const nextBtn = document.getElementById("testNext");
+            const doneBtn = document.getElementById("testDone");
+
+            function renderQuestion() {
+              const current = testQuestions[state.testIndex];
+              testMeta.textContent = `Вопрос ${state.testIndex + 1} / ${testQuestions.length}`;
+              testQuestion.textContent = current.q;
+              testOptions.innerHTML = "";
+              testReaction.classList.add("hidden");
+              nextBtn.classList.add("hidden");
+              doneBtn.classList.add("hidden");
+
+              current.options.forEach((option) => {
+                const btn = document.createElement("button");
+                btn.className = "btn secondary";
+                btn.type = "button";
+                btn.textContent = option;
+                btn.addEventListener("click", () => {
+                  testReaction.textContent = current.reaction;
+                  testReaction.classList.remove("hidden");
+                  [...testOptions.querySelectorAll("button")].forEach((b) => (b.disabled = true));
+                  beep(720);
+                  if (state.testIndex < testQuestions.length - 1) {
+                    nextBtn.classList.remove("hidden");
+                  } else {
+                    doneBtn.classList.remove("hidden");
+                  }
+                  focusPrimary();
+                });
+                testOptions.appendChild(btn);
+              });
+            }
+
+            nextBtn.addEventListener("click", () => {
+              state.testIndex += 1;
+              renderQuestion();
+              focusPrimary();
+            });
+            doneBtn.addEventListener("click", () => {
+              beep(660);
+              nextStep();
+            });
+
+            renderQuestion();
+            focusPrimary();
+          },
+        },
+        3: {
+          template: () => `
+            <h2>Поймай 5 сердечек</h2>
+            <p class="muted">Сердечко быстрое, но оно любит Машу.</p>
+            <div class="test-meta">Счётчик: <span id="catchCount">0/5</span></div>
+            <div class="arena" id="heartArena">
+              <button class="runner-heart" id="runnerHeart" type="button" aria-label="Поймать сердечко">❤️</button>
+            </div>
+            <div class="reason-popup" id="reasonPopup"></div>
+            <div class="btn-row">
+              <button class="btn primary hidden" id="toContract" type="button">К договору ❤️</button>
+            </div>
+          `,
+          init: () => {
+            state.heartsCaught = 0;
+            const arena = document.getElementById("heartArena");
+            const heart = document.getElementById("runnerHeart");
+            const countEl = document.getElementById("catchCount");
+            const reasonPopup = document.getElementById("reasonPopup");
+            const toContract = document.getElementById("toContract");
+            const size = 56;
+            let rafId = null;
+            let pointer = { x: null, y: null };
+            let bounds = arena.getBoundingClientRect();
+            let pos = {
+              x: (bounds.width - size) / 2,
+              y: (bounds.height - size) / 2,
+            };
+            let vel = { x: 2.2, y: 1.7 };
+
+            function updateBounds() {
+              bounds = arena.getBoundingClientRect();
+            }
+
+            function onMove(event) {
+              const rect = arena.getBoundingClientRect();
+              pointer.x = event.clientX - rect.left;
+              pointer.y = event.clientY - rect.top;
+            }
+
+            function onTouch(event) {
+              const touch = event.touches[0];
+              if (!touch) return;
+              const rect = arena.getBoundingClientRect();
+              pointer.x = touch.clientX - rect.left;
+              pointer.y = touch.clientY - rect.top;
+            }
+
+            function tick() {
+              if (pointer.x !== null && pointer.y !== null) {
+                const dx = pos.x + size / 2 - pointer.x;
+                const dy = pos.y + size / 2 - pointer.y;
+                const distance = Math.hypot(dx, dy);
+                if (distance < 120) {
+                  const push = (120 - distance) / 120;
+                  vel.x += (dx / (distance || 1)) * push * 1.6;
+                  vel.y += (dy / (distance || 1)) * push * 1.6;
+                }
+              }
+
+              if (Math.random() < 0.04) {
+                vel.x += (Math.random() - 0.5) * 1.4;
+                vel.y += (Math.random() - 0.5) * 1.4;
+              }
+
+              vel.x *= 0.97;
+              vel.y *= 0.97;
+              pos.x += vel.x;
+              pos.y += vel.y;
+
+              if (pos.x < 0) {
+                pos.x = 0;
+                vel.x = Math.abs(vel.x);
+              } else if (pos.x > bounds.width - size) {
+                pos.x = bounds.width - size;
+                vel.x = -Math.abs(vel.x);
+              }
+              if (pos.y < 0) {
+                pos.y = 0;
+                vel.y = Math.abs(vel.y);
+              } else if (pos.y > bounds.height - size) {
+                pos.y = bounds.height - size;
+                vel.y = -Math.abs(vel.y);
+              }
+
+              heart.style.transform = `translate(${pos.x}px, ${pos.y}px)`;
+              rafId = requestAnimationFrame(tick);
+            }
+
+            function showReason(index) {
+              reasonPopup.innerHTML = `<strong>Причина №${index}</strong><div>${heartReasons[index - 1]}</div>`;
+              reasonPopup.classList.remove("show");
+              void reasonPopup.offsetWidth;
+              reasonPopup.classList.add("show");
+            }
+
+            function randomJump() {
+              pos.x = Math.random() * (bounds.width - size);
+              pos.y = Math.random() * (bounds.height - size);
+              vel.x = (Math.random() - 0.5) * 6;
+              vel.y = (Math.random() - 0.5) * 6;
+            }
+
+            heart.addEventListener("click", () => {
+              if (state.heartsCaught >= 5) return;
+              state.heartsCaught += 1;
+              countEl.textContent = `${state.heartsCaught}/5`;
+              showReason(state.heartsCaught);
+              beep(780);
+              if (state.heartsCaught >= 5) {
+                heart.classList.add("caught");
+                toContract.classList.remove("hidden");
+                cancelAnimationFrame(rafId);
+              } else {
+                randomJump();
+              }
+              focusPrimary();
+            });
+
+            toContract.addEventListener("click", () => {
+              beep(640);
+              nextStep();
+            });
+
+            arena.addEventListener("mousemove", onMove);
+            arena.addEventListener("touchmove", onTouch, { passive: true });
+            window.addEventListener("resize", updateBounds);
+            updateBounds();
+            rafId = requestAnimationFrame(tick);
+
+            addCleanup(() => cancelAnimationFrame(rafId));
+            addCleanup(() => arena.removeEventListener("mousemove", onMove));
+            addCleanup(() => arena.removeEventListener("touchmove", onTouch));
+            addCleanup(() => window.removeEventListener("resize", updateBounds));
+          },
+        },
+        4: {
+          template: () => `
+            <h2>ДОГОВОР №14/02: «Маша — моя валентинка»</h2>
+            <p class="muted">Поставь галочки. Юристы сердца строгие.</p>
+            <div class="contract-list" id="contractList">
+              <label class="contract-item"><input type="checkbox" data-index="0" />Согласна получать обнимашки без предупреждения</label>
+              <label class="contract-item"><input type="checkbox" data-index="1" />Согласна на мемы в неожиданные моменты</label>
+              <label class="contract-item"><input type="checkbox" data-index="2" />Согласна иногда запускать «наебательный процесс» (в разумных пределах)</label>
+              <label class="contract-item"><input type="checkbox" data-index="3" />Согласна, что ты бусинка (не оспаривается)</label>
+              <label class="contract-item"><input type="checkbox" data-index="4" />Согласна, что правая рука — под особой защитой и вниманием 😄</label>
+            </div>
+            <div class="hint" id="contractHint"></div>
+            <div class="btn-row">
+              <button class="btn primary" id="signBtn" type="button" disabled>Подписать ❤️</button>
+              <button class="btn primary hidden" id="toSecret" type="button">Дальше</button>
+            </div>
+            <div class="signature hidden" id="signature">Подписано: Маша ✅ Статус: официальная валентинка (уровень: легендарный)</div>
+          `,
+          init: () => {
+            state.contractChecks = [false, false, false, false, false];
+            state.contractSigned = false;
+            const list = document.getElementById("contractList");
+            const signBtn = document.getElementById("signBtn");
+            const hint = document.getElementById("contractHint");
+            const signature = document.getElementById("signature");
+            const toSecret = document.getElementById("toSecret");
+            const minChecks = 4;
+
+            function updateState() {
+              const count = [...list.querySelectorAll("input[type='checkbox']")].filter(
+                (input) => input.checked
+              ).length;
+              signBtn.disabled = count < minChecks;
+              hint.textContent =
+                count < minChecks
+                  ? "Недостаточно милоты в форме. Добавь ещё одну галочку, милая."
+                  : "";
+            }
+
+            list.addEventListener("change", updateState);
+
+            signBtn.addEventListener("click", () => {
+              if (signBtn.disabled) return;
+              beep(700);
+              state.contractSigned = true;
+              signature.classList.remove("hidden");
+              toSecret.classList.remove("hidden");
+              signBtn.disabled = true;
+              [...list.querySelectorAll("input")].forEach((input) => (input.disabled = true));
+              hint.textContent = "";
+              focusPrimary();
+            });
+
+            toSecret.addEventListener("click", () => {
+              beep(640);
+              nextStep();
+            });
+
+            updateState();
+          },
+        },
+        5: {
+          template: () => `
+            <h2>Секретная комната 🔒</h2>
+            <p class="muted">Только для Маши. Подсказка: пароль — то, что мы часто говорим. Подсказка 2: это про процесс 😌</p>
+            <div class="btn-row">
+              <input id="secretInput" type="text" placeholder="Введите пароль" aria-label="Пароль" style="flex:1; padding:12px 14px; border-radius:12px; border:1px solid rgba(255,92,122,0.3); font-size:1rem;" />
+              <button class="btn primary" id="secretBtn" type="button">Открыть</button>
+            </div>
+            <div class="hint" id="secretHint"></div>
+            <div class="secret-boxes hidden" id="secretBoxes">
+              <div class="secret-box">Ты моя милая. Я горжусь тобой.</div>
+              <div class="secret-box">Я выбираю тебя. Каждый день.</div>
+              <div class="secret-box">PS: правая рука получает VIP-пропуск на обнимашки.</div>
+            </div>
+            <div class="btn-row">
+              <button class="btn primary hidden" id="toFinal" type="button">К финалу 💘</button>
+            </div>
+          `,
+          init: () => {
+            state.secretUnlocked = false;
+            const input = document.getElementById("secretInput");
+            const btn = document.getElementById("secretBtn");
+            const hint = document.getElementById("secretHint");
+            const boxes = document.getElementById("secretBoxes");
+            const toFinal = document.getElementById("toFinal");
+
+            function unlock() {
+              const value = input.value.trim().toLowerCase();
+              if (value === "наебательный процесс") {
+                state.secretUnlocked = true;
+                boxes.classList.remove("hidden");
+                toFinal.classList.remove("hidden");
+                hint.textContent = "Доступ открыт для бусинки ✅";
+                beep(760);
+                focusPrimary();
+              } else {
+                hint.textContent =
+                  "Хм… это похоже на попытку обмана. Запускается «наебательный процесс»? 😄";
+                beep(440);
+              }
+            }
+
+            btn.addEventListener("click", unlock);
+            input.addEventListener("keydown", (event) => {
+              if (event.key === "Enter") unlock();
+            });
+
+            toFinal.addEventListener("click", () => {
+              beep(640);
+              nextStep();
+            });
+            focusPrimary();
+          },
+        },
+        6: {
+          template: () => `
+            <h2>Маша, будешь моей валентинкой? 💘</h2>
+            <p class="muted">Я готов пройти все карточки снова, если надо.</p>
+            <div class="btn-row">
+              <button class="btn primary" id="yesBtn" type="button">Да</button>
+              <button class="btn secondary" id="yesPlusBtn" type="button">Конечно да</button>
+            </div>
+            <div class="small-note">Ответ «нет» временно недоступен по техническим причинам (потому что я люблю тебя).</div>
+          `,
+          init: () => {
+            const yesBtn = document.getElementById("yesBtn");
+            const yesPlusBtn = document.getElementById("yesPlusBtn");
+
+            function showFinal(text) {
+              overlay.innerHTML = `
+                <div class="modal">
+                  <h2>Ура! 🎉</h2>
+                  <p>${text}</p>
+                  <button class="btn primary" id="closeOverlay" type="button">Супер ❤️</button>
+                </div>
+              `;
+              overlay.classList.add("show");
+              overlay.setAttribute("aria-hidden", "false");
+              fireConfetti();
+              const closeBtn = document.getElementById("closeOverlay");
+              closeBtn.addEventListener("click", () => {
+                overlay.classList.remove("show");
+                overlay.setAttribute("aria-hidden", "true");
+                closeBtn.blur();
+              });
+            }
+
+            yesBtn.addEventListener("click", () => {
+              beep(820);
+              showFinal("Сдержанно, но уверенно. Уважаю 😌❤️");
+            });
+            yesPlusBtn.addEventListener("click", () => {
+              beep(860);
+              showFinal("Вот это мой человек. Я тебя обожаю, бусинка.");
+            });
+            focusPrimary();
+          },
+        },
+      };
+
+      function renderStep() {
+        runCleanups();
+        updateProgress();
+        card.innerHTML = steps[state.step].template();
+        animateCard();
+        steps[state.step].init();
+      }
+
+      function nextStep() {
+        if (state.step < totalSteps) {
+          state.step += 1;
+          renderStep();
+        }
+      }
+
+      function fireConfetti() {
+        const amount = 30;
+        for (let i = 0; i < amount; i++) {
+          const confetti = document.createElement("span");
+          confetti.className = "confetti";
+          confetti.textContent = Math.random() > 0.5 ? "💖" : "❤️";
+          confetti.style.left = `${Math.random() * 100}vw`;
+          confetti.style.setProperty("--dur", `${2.2 + Math.random() * 1.6}s`);
+          confetti.style.fontSize = `${16 + Math.random() * 14}px`;
+          document.body.appendChild(confetti);
+          setTimeout(() => confetti.remove(), 4000);
+        }
+      }
+
+      renderStep();
+    </script>
+  </body>
+</html>

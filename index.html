@@ -1242,7 +1242,11 @@
         return bytes;
       }
 
-      function buildPdfBlob(jpegBytes, width, height) {
+      function buildPdfBlob(pagesInput) {
+        const pages = Array.isArray(pagesInput) ? pagesInput : [pagesInput];
+        if (!pages.length) {
+          return new Blob([], { type: "application/pdf" });
+        }
         const encoder = new TextEncoder();
         const parts = [];
         const offsets = [0];
@@ -1266,43 +1270,57 @@
           return String(value).padStart(10, "0");
         }
 
+        const kids = pages
+          .map((_, index) => `${3 + index * 3} 0 R`)
+          .join(" ");
+
         pushText("%PDF-1.3\n");
 
         markOffset();
         pushText("1 0 obj\n<< /Type /Catalog /Pages 2 0 R >>\nendobj\n");
 
         markOffset();
-        pushText("2 0 obj\n<< /Type /Pages /Kids [3 0 R] /Count 1 >>\nendobj\n");
+        pushText(`2 0 obj\n<< /Type /Pages /Kids [${kids}] /Count ${pages.length} >>\nendobj\n`);
 
-        markOffset();
-        pushText(
-          `3 0 obj\n<< /Type /Page /Parent 2 0 R /MediaBox [0 0 ${width} ${height}] ` +
-            `/Resources << /XObject << /Im0 4 0 R >> /ProcSet [/PDF /ImageC] >> ` +
-            `/Contents 5 0 R >>\nendobj\n`
-        );
+        pages.forEach((page, index) => {
+          const pageObj = 3 + index * 3;
+          const imageObj = pageObj + 1;
+          const contentObj = pageObj + 2;
+          const xObjName = `Im${index + 1}`;
+          const { jpegBytes, width, height } = page;
 
-        markOffset();
-        pushText(
-          `4 0 obj\n<< /Type /XObject /Subtype /Image /Width ${width} /Height ${height} ` +
-            `/ColorSpace /DeviceRGB /BitsPerComponent 8 /Filter /DCTDecode /Length ${jpegBytes.length} >>\nstream\n`
-        );
-        pushBytes(jpegBytes);
-        pushText("\nendstream\nendobj\n");
+          markOffset();
+          pushText(
+            `${pageObj} 0 obj\n<< /Type /Page /Parent 2 0 R /MediaBox [0 0 ${width} ${height}] ` +
+              `/Resources << /XObject << /${xObjName} ${imageObj} 0 R >> /ProcSet [/PDF /ImageC] >> ` +
+              `/Contents ${contentObj} 0 R >>\nendobj\n`
+          );
 
-        const contentStream = `q\n${width} 0 0 ${height} 0 0 cm\n/Im0 Do\nQ\n`;
-        markOffset();
-        pushText(
-          `5 0 obj\n<< /Length ${contentStream.length} >>\nstream\n${contentStream}endstream\nendobj\n`
-        );
+          markOffset();
+          pushText(
+            `${imageObj} 0 obj\n<< /Type /XObject /Subtype /Image /Width ${width} /Height ${height} ` +
+              `/ColorSpace /DeviceRGB /BitsPerComponent 8 /Filter /DCTDecode /Length ${jpegBytes.length} >>\nstream\n`
+          );
+          pushBytes(jpegBytes);
+          pushText("\nendstream\nendobj\n");
+
+          const contentStream = `q\n${width} 0 0 ${height} 0 0 cm\n/${xObjName} Do\nQ\n`;
+          markOffset();
+          pushText(
+            `${contentObj} 0 obj\n<< /Length ${contentStream.length} >>\nstream\n${contentStream}endstream\nendobj\n`
+          );
+        });
 
         const xrefOffset = length;
-        pushText("xref\n0 6\n");
+        pushText(`xref\n0 ${offsets.length}\n`);
         pushText("0000000000 65535 f \n");
         for (let i = 1; i < offsets.length; i++) {
           pushText(`${padOffset(offsets[i])} 00000 n \n`);
         }
 
-        pushText(`trailer\n<< /Size 6 /Root 1 0 R >>\nstartxref\n${xrefOffset}\n%%EOF`);
+        pushText(
+          `trailer\n<< /Size ${offsets.length} /Root 1 0 R >>\nstartxref\n${xrefOffset}\n%%EOF`
+        );
 
         return new Blob(parts, { type: "application/pdf" });
       }
@@ -1310,43 +1328,94 @@
       function buildAgreementPdf(signatureLine, dateLine) {
         const width = 595;
         const height = 842;
-        const canvas = document.createElement("canvas");
-        canvas.width = width;
-        canvas.height = height;
-        const ctx = canvas.getContext("2d");
-        ctx.fillStyle = "#ffffff";
-        ctx.fillRect(0, 0, width, height);
-        ctx.fillStyle = "#2b1a1f";
-        ctx.textBaseline = "top";
+        const marginX = 40;
+        const marginTop = 40;
+        const marginBottom = 40;
+        const maxWidth = width - marginX * 2;
+        const pageLimit = height - marginBottom;
+        const pages = [];
 
-        let y = 40;
-        ctx.font = "bold 18px \"Times New Roman\", serif";
-        y = wrapText(ctx, agreementPdfLines[0], 40, y, width - 80, 24) + 6;
-        ctx.font = "italic 13px \"Times New Roman\", serif";
-        y = wrapText(ctx, agreementPdfLines[1], 40, y, width - 80, 18) + 6;
-        ctx.font = "14px \"Times New Roman\", serif";
+        function createPage() {
+          const canvas = document.createElement("canvas");
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext("2d");
+          ctx.fillStyle = "#ffffff";
+          ctx.fillRect(0, 0, width, height);
+          ctx.fillStyle = "#2b1a1f";
+          ctx.textBaseline = "top";
+          pages.push({ canvas, ctx });
+          return ctx;
+        }
 
-        agreementPdfLines.slice(2).forEach((line) => {
-          if (!line) {
-            y += 12;
-            return;
-          }
-          y = wrapText(ctx, line, 40, y, width - 80, 20);
-        });
+        let ctx = createPage();
+        let y = marginTop;
 
-        if (signatureLine) {
-          y += 10;
-          ctx.font = "bold 14px \"Times New Roman\", serif";
-          y = wrapText(ctx, signatureLine, 40, y, width - 80, 20);
-          ctx.font = "12px \"Times New Roman\", serif";
-          if (dateLine) {
-            y = wrapText(ctx, dateLine, 40, y, width - 80, 18);
+        function ensureSpace(space) {
+          if (y + space > pageLimit) {
+            ctx = createPage();
+            y = marginTop;
           }
         }
 
-        const dataUrl = canvas.toDataURL("image/jpeg", 0.92);
-        const jpegBytes = base64ToUint8Array(dataUrl.split(",")[1]);
-        return buildPdfBlob(jpegBytes, width, height);
+        function addSpace(space) {
+          ensureSpace(space);
+          y += space;
+        }
+
+        function drawWrappedText(text, font, lineHeight) {
+          ctx.font = font;
+          if (!text) {
+            addSpace(lineHeight);
+            return;
+          }
+          const words = text.split(" ");
+          let line = "";
+          for (let i = 0; i < words.length; i++) {
+            const testLine = line ? `${line} ${words[i]}` : words[i];
+            if (ctx.measureText(testLine).width > maxWidth && line) {
+              ensureSpace(lineHeight);
+              ctx.fillText(line, marginX, y);
+              y += lineHeight;
+              line = words[i];
+            } else {
+              line = testLine;
+            }
+          }
+          if (line) {
+            ensureSpace(lineHeight);
+            ctx.fillText(line, marginX, y);
+            y += lineHeight;
+          }
+        }
+
+        drawWrappedText(agreementPdfLines[0], 'bold 18px "Times New Roman", serif', 24);
+        addSpace(6);
+        drawWrappedText(agreementPdfLines[1], 'italic 13px "Times New Roman", serif', 18);
+        addSpace(6);
+
+        agreementPdfLines.slice(2).forEach((line) => {
+          if (!line) {
+            addSpace(12);
+            return;
+          }
+          drawWrappedText(line, '14px "Times New Roman", serif', 20);
+        });
+
+        if (signatureLine) {
+          addSpace(10);
+          drawWrappedText(signatureLine, 'bold 14px "Times New Roman", serif', 20);
+          if (dateLine) {
+            drawWrappedText(dateLine, '12px "Times New Roman", serif', 18);
+          }
+        }
+
+        const pdfPages = pages.map((page) => {
+          const dataUrl = page.canvas.toDataURL("image/jpeg", 0.92);
+          const jpegBytes = base64ToUint8Array(dataUrl.split(",")[1]);
+          return { jpegBytes, width, height };
+        });
+        return buildPdfBlob(pdfPages);
       }
 
       function downloadAgreementPdf(signatureLine, dateLine) {

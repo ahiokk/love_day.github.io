@@ -574,6 +574,18 @@
         box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.6);
       }
 
+      .skip-row {
+        display: flex;
+        justify-content: flex-end;
+        margin-top: 10px;
+      }
+
+      .skip-btn {
+        padding: 8px 12px;
+        border-radius: 999px;
+        font-size: 0.9rem;
+      }
+
       .doc-scroll h3 {
         margin-top: 0;
         font-size: 1.05rem;
@@ -1835,8 +1847,8 @@
               <h2>100 причин, почему я тебя люблю 💖</h2>
               <p class="muted">Отметь каждую причину. Пока не будет 100 из 100, дальше не пустит.</p>
               <div class="test-meta">Отмечено: <span id="reasonCount">0/100</span></div>
-              <div class="reason-scroll" id="reasonScroll">
-                <div class="contract-list" id="reasonList">
+            <div class="reason-scroll" id="reasonScroll">
+              <div class="contract-list" id="reasonList">
                   ${loveReasons
                     .map(
                       (reason, index) =>
@@ -1845,20 +1857,24 @@
                         }. ${reason}</label>`
                     )
                     .join("")}
-                </div>
               </div>
-              <div class="hint" id="reasonHint"></div>
-              <div class="think-note" id="reasonNote"></div>
-              <div class="burst-layer" id="reasonBurst" aria-hidden="true"></div>
-            `,
-            init: () => {
-              const reasonList = document.getElementById("reasonList");
-              const reasonCount = document.getElementById("reasonCount");
-              const reasonHint = document.getElementById("reasonHint");
-              const reasonNote = document.getElementById("reasonNote");
-              const reasonBurst = document.getElementById("reasonBurst");
-              let doneTimer = null;
-              let completed = false;
+            </div>
+            <div class="hint" id="reasonHint"></div>
+            <div class="think-note" id="reasonNote"></div>
+            <div class="skip-row">
+              <button class="btn secondary skip-btn" id="reasonSkip" type="button">Пропустить →</button>
+            </div>
+            <div class="burst-layer" id="reasonBurst" aria-hidden="true"></div>
+          `,
+          init: () => {
+            const reasonList = document.getElementById("reasonList");
+            const reasonCount = document.getElementById("reasonCount");
+            const reasonHint = document.getElementById("reasonHint");
+            const reasonNote = document.getElementById("reasonNote");
+            const reasonBurst = document.getElementById("reasonBurst");
+            const reasonSkip = document.getElementById("reasonSkip");
+            let doneTimer = null;
+            let completed = false;
 
               function updateReasonState() {
                 const count = [...reasonList.querySelectorAll("input[type='checkbox']")].filter(
@@ -1882,10 +1898,17 @@
                 }, 1900);
               }
 
+              const handleSkip = () => {
+                beep(520);
+                nextStep();
+              };
+
               reasonList.addEventListener("change", updateReasonState);
+              reasonSkip.addEventListener("click", handleSkip);
               updateReasonState();
               addCleanup(() => clearTimeout(doneTimer));
               addCleanup(() => reasonList.removeEventListener("change", updateReasonState));
+              addCleanup(() => reasonSkip.removeEventListener("click", handleSkip));
               focusPrimary();
             },
           },
